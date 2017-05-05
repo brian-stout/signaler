@@ -4,33 +4,59 @@
 #include <errno.h>
 #include <signal.h>
 
-void sigint_handler(int sig)
+volatile sig_atomic_t got_usr1;
+
+void signal_handler(int signal)
 {
-	write(0, "Hey that was a SIGINT!\n", 14);
+    switch(signal) {
+
+    case SIGUSR1 :
+        write(0, "SIGUSR1\n", 10);
+        break;
+    case SIGUSR2 :
+        write(0, "SIGUSR2\n", 10);
+        break;
+    case SIGHUP :
+        write(0, "SIGHUP\n", 9);
+        break;
+    case SIGINT:
+        write(0, "Received SIGINT, exiting program\n", 33);
+        exit(0);
+    default:
+        write(0, "Bad Signal", 10);
+    }
 }
 
 int main(void)
 {
-	void sigint_handler(int sig); /* prototype */
-	char s[200];
-	struct sigaction sa;
+    struct sigaction sa;
 
-	sa.sa_handler = sigint_handler;
-	sa.sa_flags = 0; // or SA_RESTART
-	sigemptyset(&sa.sa_mask);
+    got_usr1 = 0;
+    sa.sa_handler = signal_handler;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
 
-	if (sigaction(SIGINT, &sa, NULL) == -1) {
-		perror("sigaction");
-		exit(1);
-	}
+    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+        perror("Error on SIGUSR1\n");
+    }
+    if (sigaction(SIGUSR2, &sa, NULL) == -1) {
+        perror("Error on SIGUSR2\n");
+    }
+    if (sigaction(SIGHUP, &sa, NULL) == -1) {
+        perror("Error on SIGHUP\n");
+    }
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("Error on SIGINT\n");
+    }  
 
-	printf("Enter a string:\n");
+    // Change 1 to true later
+    while (1) {
+        printf("PID %d: working hard...\n", getpid());
+        sleep(1);
+    }
 
-	if (fgets(s, sizeof s, stdin) == NULL)
-		perror("fgets");
-	else 
-		printf("You entered: %s\n", s);
+    printf("Done in by SIGUSR1!\n");
 
-	return 0;
+    return 0;
 }
 
