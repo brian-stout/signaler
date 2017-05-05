@@ -235,7 +235,7 @@ bool is_prime(size_t number)
     } else if(number % 2 == 0 || number % 3 == 0) {
         return false;
     } else {
-        //If everything else, brute foce checks
+        //If everything else, brute force checks
         unsigned long int i;
         //You only have to check up to the square root of a number
         //  because checking if a number is a product checks the other
