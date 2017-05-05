@@ -4,46 +4,13 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h> 
+#include <math.h>
 
 volatile sig_atomic_t got_sigusr1, got_sigusr2, got_sighup;
 
-void signal_handler(int signal)
-{
-    switch(signal) {
+void signal_handler(int signal);
 
-    case SIGUSR1 :
-        write(0, "SIGUSR1\n", 10);
-        got_sigusr1 = true;
-        break;
-    case SIGUSR2 :
-        write(0, "SIGUSR2\n", 10);
-        if (got_sigusr2 == true) {
-            got_sigusr2 = false;
-        }
-        else {
-            got_sigusr2 = true;
-        }
-        break;
-    case SIGHUP :
-        write(0, "SIGHUP\n", 9);
-        got_sighup = true;
-        break;
-    case SIGINT:
-        write(0, "Received SIGINT, exiting program\n", 33);
-        exit(0);
-    default:
-        write(0, "Bad Signal", 10);
-        return;
-    }
-}
-
-bool is_prime(size_t number)
-{
-    printf("%zd\n", number);
-    return true;
-}
-
-
+bool is_prime(size_t number);
 
 int main(void)
 {
@@ -100,5 +67,56 @@ int main(void)
     printf("Done in by SIGUSR1!\n");
 
     return 0;
+}
+
+void signal_handler(int signal)
+{
+    switch(signal) {
+
+    case SIGUSR1 :
+        write(0, "SIGUSR1\n", 10);
+        got_sigusr1 = true;
+        break;
+    case SIGUSR2 :
+        write(0, "SIGUSR2\n", 10);
+        if (got_sigusr2 == true) {
+            got_sigusr2 = false;
+        }
+        else {
+            got_sigusr2 = true;
+        }
+        break;
+    case SIGHUP :
+        write(0, "SIGHUP\n", 9);
+        got_sighup = true;
+        break;
+    case SIGINT:
+        write(0, "Received SIGINT, exiting program\n", 33);
+        exit(0);
+    default:
+        write(0, "Bad Signal", 10);
+        return;
+    }
+}
+
+//http://cartera.me/2012/01/10/primality-testing-and-factorization-in-c/
+//http://stackoverflow.com/a/26760082
+bool is_prime(size_t number)
+{
+    if (number <= 3 && number > 1) {
+        return true;
+    }
+    else if (number % 2 == 0 || number % 3 == 0 || number == 1) {
+        return false;
+    }
+    else {
+        unsigned long int i;
+        for (i = 5; i*i <= number; i+=6) {
+            if (number % i == 0 || number%(i + 2) == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
