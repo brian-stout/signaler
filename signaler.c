@@ -3,7 +3,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
-#include <stdbool.h> 
+#include <stdbool.h>
+#include <sysexits.h> 
 #include <math.h>
 
 volatile sig_atomic_t got_sigusr1, got_sigusr2, got_sighup;
@@ -12,13 +13,109 @@ void signal_handler(int signal);
 
 bool is_prime(size_t number);
 
-int main(void)
-{
-    struct sigaction sa;
+bool argument_checker(int argc, char *argv[]);
 
+int main(int argc, char *argv[])
+{
+    if (argument_checker(argc, argv)) {
+        return EX_USAGE;
+    }
+
+    long int counter = 2;
+    long int end_number = 0;
     got_sigusr1 = false;
     got_sigusr2 = false;
     got_sighup = false;
+
+    int c;
+    bool s_flag = false;
+    bool e_flag = false;
+    bool r_flag = false;
+    while (-1 < (c = getopt(argc, argv, "s:e:r")))
+    {
+        char *err;
+
+
+        switch (c)
+        {
+        case 's':
+            if (s_flag == true) {
+                printf("Error: Do not use duplicate flags!\n");
+                return EX_USAGE;
+            }
+            else {
+                s_flag = true;
+            }
+            //Grabs the string following s and turns it to a number
+            errno = 0;
+            counter = strtol(optarg, &err, 10);
+            //if strtol fails it's likely because of this error
+            if (*err)
+            {
+                printf("Error: -s must be followed by a valid number \n");
+                return EX_USAGE;
+            }
+            //avoids weird negative numbers as user input
+            if (counter < 0)
+            {
+                printf("Error: -s can not be followed by a negative number \n");
+                return EX_USAGE;
+            }
+            if (errno) {
+                printf("An error was detected\n");
+                return EX_USAGE;
+            }
+            break;
+        case 'e':
+            if (e_flag == true) {
+                printf("Error: Do not use duplicate flags!\n");
+                return EX_USAGE;
+            }
+            else {
+                e_flag = true;
+            }
+            //Grabs the string following s and turns it to a number
+            errno = 0;
+            end_number = strtol(optarg, &err, 10);
+            //if strtol fails it's likely because of this error
+            if (*err)
+            {
+                printf("Error: -e must be followed by a valid number \n");
+                return EX_USAGE;
+            }
+            //avoids weird negative numbers as user input
+            if (counter < 0)
+            {
+                printf("Error: -e can not be followed by a negative number \n");
+                return EX_USAGE;
+            }
+            if (errno) {
+                printf("An error was detected\n");
+                return EX_USAGE;
+            }
+            break;
+        case 'r':
+            //Flag for printing out results in reverse
+            if (r_flag == true) {
+                printf("Error: Do not use duplicate flags!\n");
+                return EX_USAGE;
+            }
+            else {
+                r_flag = true;
+            }
+            got_sigusr2 = true;
+            break;
+        case '?':
+            return EX_USAGE;
+        }
+    }
+
+    if (got_sigusr2 == true && counter == 2) {
+        printf("Error:  A starting point must be specified for reverse counting\n");
+        return EX_USAGE;
+    }
+
+    struct sigaction sa;
 
     sa.sa_handler = signal_handler;
     sa.sa_flags = 0;
@@ -37,12 +134,14 @@ int main(void)
         perror("Error on SIGINT\n");
     }  
 
-    size_t counter = 2;
     for(;;) {
-
         if (got_sighup == true) {
             counter = 2;
             got_sighup = false;
+        }
+
+        if (end_number != 0 && counter > end_number) {
+            break;
         }
 
         if (is_prime(counter)) {
@@ -56,7 +155,7 @@ int main(void)
                 //Checking to see if the next number is going to be less
                 //  than two and it's the reverse direction
                 if (counter <= 2 && got_sigusr2 == true) {
-                    return 0;
+                    break;
                 }
                 sleep(1);
             }
@@ -69,8 +168,6 @@ int main(void)
             counter++;
         }
     }
-
-    printf("Done in by SIGUSR1!\n");
 
     return 0;
 }
@@ -124,5 +221,32 @@ bool is_prime(size_t number)
         }
         return true;
     }
+}
+
+bool
+argument_checker(int argc, char *argv[])
+{
+    bool r = false;
+
+    for (int i = 0; i < argc; ++i)
+    {
+        if (argv[i][0] == '-')
+        {
+            //Checks to see if a tack option is followed by a space
+            if (argv[i][1] == ' ' || argv[i][1] == '\0')
+            {
+                printf("Usage: [-s <start prime>] [-e <exit prime>] [-r reverse]\n");
+                r = true;
+            }
+            //Checks to see if non option arguments exist before the options
+            else if (argv[1][0] != '-')
+            {
+                printf("Usage: [-s <start prime>] [-e <exit prime>] [-r reverse]\n");
+                r = true;
+            }
+        }
+    }
+
+    return r;
 }
 
