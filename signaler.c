@@ -190,7 +190,6 @@ int main(int argc, char *argv[])
             counter++;
         }
     }
-
     return 0;
 }
 
@@ -198,9 +197,12 @@ void signal_handler(int signal)
 {
     switch(signal) {
         case SIGUSR1 :
+            //Sets a flag that lets the program know to skip the next prime number
             got_sigusr1 = true;
             break;
         case SIGUSR2 :
+            //Sets a flag to print numbers in reverse if it hasn't already
+            //  If it has already it flips it back
             if (got_sigusr2 == true) {
                 got_sigusr2 = false;
             } else {
@@ -208,12 +210,15 @@ void signal_handler(int signal)
             }
             break;
         case SIGHUP :
+            //Sets a flag that tells the program to reset the count to zero
             got_sighup = true;
             break;
         case SIGINT:
+            //Ctrl+C will exit normally
             write(0, "Received SIGINT, exiting program\n", 33);
             exit(0);
         default:
+            //Should never happen
             write(0, "Bad Signal", 10);
             return;
     }
@@ -223,13 +228,18 @@ void signal_handler(int signal)
 //http://stackoverflow.com/a/26760082
 bool is_prime(size_t number)
 {
+    //Gets the 2 and 3 edge cases out of the way
     if(number <= 3 && number > 1) {
         return true;
+    //2 and 3 are the most common non-prime number products
     } else if(number % 2 == 0 || number % 3 == 0) {
         return false;
     } else {
-
+        //If everything else, brute foce checks
         unsigned long int i;
+        //You only have to check up to the square root of a number
+        //  because checking if a number is a product checks the other
+        //  complimentary product as well
         for(i = 5; i*i <= number; i+=6) {
             if(number % i == 0 || number%(i + 2) == 0) {
                 return false;
