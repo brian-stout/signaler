@@ -13,15 +13,20 @@ void signal_handler(int signal)
 
     case SIGUSR1 :
         write(0, "SIGUSR1\n", 10);
-        got_sigusr1 = 1;
+        got_sigusr1 = true;
         break;
     case SIGUSR2 :
         write(0, "SIGUSR2\n", 10);
-        got_sigusr2 = 1;
+        if (got_sigusr2 == true) {
+            got_sigusr2 = false;
+        }
+        else {
+            got_sigusr2 = true;
+        }
         break;
     case SIGHUP :
         write(0, "SIGHUP\n", 9);
-        got_sighup = 1;
+        got_sighup = true;
         break;
     case SIGINT:
         write(0, "Received SIGINT, exiting program\n", 33);
@@ -44,9 +49,9 @@ int main(void)
 {
     struct sigaction sa;
 
-    got_sigusr1 = 0;
-    got_sigusr2 = 0;
-    got_sighup = 0;
+    got_sigusr1 = false;
+    got_sigusr2 = false;
+    got_sighup = false;
 
     sa.sa_handler = signal_handler;
     sa.sa_flags = 0;
@@ -65,12 +70,30 @@ int main(void)
         perror("Error on SIGINT\n");
     }  
 
-    // Change 1 to true later
-    for(size_t counter = 1; true; counter++) {
+    size_t counter = 1;
+    for(;;) {
+
+        if (got_sighup == true) {
+            counter = 2;
+            got_sighup = false;
+        }
 
         if (is_prime(counter)) {
-            printf("PID: %d\t Prime: %zd\n", getpid(), counter);
-            sleep(1);
+
+            if  (got_sigusr1 == true) {
+                got_sigusr1 = false;
+            }
+            else {
+                printf("PID: %d\t Prime: %zd\n", getpid(), counter);
+                sleep(1);
+            }
+        }
+
+        if (got_sigusr2 == true) {
+            counter--;      
+        }
+        else {
+            counter++;
         }
     }
 
