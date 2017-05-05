@@ -37,7 +37,7 @@ int main(void)
         perror("Error on SIGINT\n");
     }  
 
-    size_t counter = 1;
+    size_t counter = 2;
     for(;;) {
 
         if (got_sighup == true) {
@@ -52,6 +52,12 @@ int main(void)
             }
             else {
                 printf("PID: %d\t Prime: %zd\n", getpid(), counter);
+
+                //Checking to see if the next number is going to be less
+                //  than two and it's the reverse direction
+                if (counter <= 2 && got_sigusr2 == true) {
+                    return 0;
+                }
                 sleep(1);
             }
         }
@@ -106,7 +112,7 @@ bool is_prime(size_t number)
     if (number <= 3 && number > 1) {
         return true;
     }
-    else if (number % 2 == 0 || number % 3 == 0 || number == 1) {
+    else if (number % 2 == 0 || number % 3 == 0) {
         return false;
     }
     else {
