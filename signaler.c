@@ -7,12 +7,24 @@
 #include <sysexits.h> 
 #include <math.h>
 
+/**	Variables created specifically for the signal handler
+*/
 volatile sig_atomic_t got_sigusr1, got_sigusr2, got_sighup;
 
+/**	signal_handler() is a function that holds the logic for what happens
+*       when the program receives a signal.  Uses a basic switch statement
+*       that sets flags that change the behavior o the program
+*/
 void signal_handler(int signal);
 
+/**	is_prime() is a function that quickly checks if a number is prime or not
+*/
 bool is_prime(size_t number);
 
+/**	argument_checker() is responsible for parsing through the command
+*       line argument and detecting common error such as negative numbers
+*       and missing letters from tack options
+*/
 bool argument_checker(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
@@ -146,6 +158,8 @@ int main(int argc, char *argv[])
         perror("Error on SIGINT\n");
     }  
 
+    long int last_known_prime = 0;
+
     //Main loop here, counting through all numbers checking if they're prime
     for(;;) {
 
@@ -169,8 +183,9 @@ int main(int argc, char *argv[])
             //  set, if it is, set the flag to false again and move one
             if(got_sigusr1 == true) {
                 got_sigusr1 = false;
-            } else {
+            } else if(counter != last_known_prime) {
                 //Printing out the prime number with the PID of the process
+                last_known_prime = counter;
                 printf("PID: %d\t Prime: %zd\n", getpid(), counter);
 
                 //Checking to see if the next number is going to be less
@@ -178,7 +193,7 @@ int main(int argc, char *argv[])
                 if(counter <= 2 && got_sigusr2 == true) {
                     break;
                 }
-                sleep(1);
+                usleep(750000);
             }
         }
 
